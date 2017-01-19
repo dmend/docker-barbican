@@ -1,0 +1,62 @@
+#! /usr/bin/env bash
+
+docker run -d --name=keystone -p 5000:8000 keystone
+
+sleep 30
+
+docker exec keystone keystone-manage bootstrap \
+    --bootstrap-password PASSWORD \
+    --bootstrap-username admin \
+    --bootstrap-project-name admin \
+    --bootstrap-role-name admin \
+    --bootstrap-service-name keystone \
+    --bootstrap-region-id RegionOne \
+    --bootstrap-admin-url http://localhost:5000 \
+    --bootstrap-public-url http://localhost:5000 \
+    --bootstrap-internal-url http://localhost:5000
+
+source lib/osauth.sh
+
+# Barbican Roles
+# See http://docs.openstack.org/developer/barbican/admin-guide-cloud/access_control.html#default-policy
+openstack role create key-manager:service-admin
+openstack role create creator
+openstack role create observer
+openstack role create audit
+
+openstack project create service
+
+openstack user create barbican --password PASSWORD --project service
+openstack role add admin --project service --user barbican
+openstack role add key-manager:service-admin --project service --user barbican
+
+openstack service create key-manager --name barbican \
+    --description 'Key Manager Service'
+openstack endpoint create --region RegionOne barbican admin http://localhost:9311
+openstack endpoint create --region RegionOne barbican public http://localhost:9311
+openstack endpoint create --region RegionOne barbican internal http://localhost:9311
+
+openstack project create project_a
+openstack project create project_b
+
+openstack user create project_a_admin --password PASSWORD --project project_a
+openstack user create project_a_creator --password PASSWORD --project project_a
+openstack user create project_a_creator_2 --password PASSWORD --project project_a
+openstack user create project_a_observer --password PASSWORD --project project_a
+openstack user create project_a_auditor --password PASSWORD --project project_a
+
+openstack user create project_b_admin --password PASSWORD --project project_b
+openstack user create project_b_creator --password PASSWORD --project project_b
+openstack user create project_b_observer --password PASSWORD --project project_b
+openstack user create project_b_auditor --password PASSWORD --project project_b
+
+openstack role add admin --project project_a --user project_a_admin
+openstack role add creator --project project_a --user project_a_creator
+openstack role add creator --project project_a --user project_a_creator_2
+openstack role add observer --project project_a --user project_a_observer
+openstack role add audit --project project_a --user project_a_auditor
+
+openstack role add admin --project project_b --user project_b_admin
+openstack role add creator --project project_b --user project_b_creator
+openstack role add observer --project project_b --user project_b_observer
+openstack role add audit --project project_b --user project_b_auditor
