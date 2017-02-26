@@ -12,9 +12,9 @@ RUN dnf install -y libffi-devel openssl-devel
 
 # Install keystone
 ADD scripts/run.sh /opt/keystone/run.sh
-ADD keystone-11.0.0.0b1.tar.gz /src
-RUN pip install /src/keystone-11.0.0.0b1
-RUN cp -r /src/keystone-11.0.0.0b1/etc /etc/keystone
+ADD keystone-11.0.0.tar.gz /src
+RUN pip install /src/keystone-11.0.0
+RUN cp -r /src/keystone-11.0.0/etc /etc/keystone
 RUN cp /etc/keystone/keystone.conf.sample /etc/keystone/keystone.conf
 
 EXPOSE 8000
